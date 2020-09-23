@@ -1392,6 +1392,42 @@ module.exports = function buildCurve(module, prefix, prefixField, pB) {
         );
     }
 
+    function buildAffine() {
+        const f = module.addFunction(prefix + "_affine");
+        f.addParam("p1", "i32");
+        f.addParam("pr", "i32");
+
+        const c = f.getCodeBuilder();
+
+        const x = c.getLocal("p1");
+        const y = c.i32_add(c.getLocal("p1"), c.i32_const(n8));
+        const z = c.i32_add(c.getLocal("p1"), c.i32_const(n8*2));
+        const x3 = c.getLocal("pr");
+        const y3 = c.i32_add(c.getLocal("pr"), c.i32_const(n8));
+        const z3 = c.i32_add(c.getLocal("pr"), c.i32_const(n8*2));
+
+
+        const Z_inv = c.i32_const(module.alloc(n8));
+        const Z2_inv = c.i32_const(module.alloc(n8));
+        const Z3_inv = c.i32_const(module.alloc(n8));
+
+        f.addCode(
+            c.if(
+                c.call(prefix + "_isZero", c.getLocal("p1")),
+                c.call(prefix + "_zero", c.getLocal("pr")),
+                [
+                    ...c.call(prefixField + "_inverse", z, Z_inv),
+                    ...c.call(prefixField + "_square", Z_inv, Z2_inv),
+                    ...c.call(prefixField + "_mul", Z_inv, Z2_inv, Z3_inv),
+                    ...c.call(prefixField + "_mul", x, Z2_inv, x3),
+                    ...c.call(prefixField + "_mul", y, Z3_inv, y3),
+                    ...c.call(prefixField + "_one", z3)
+                ]
+            )
+        );
+    }
+
+
     buildIsZeroAffine();
     buildIsZero();
     buildZeroAffine();
@@ -1419,6 +1455,7 @@ module.exports = function buildCurve(module, prefix, prefixField, pB) {
     buildToAffine();
     buildInCurveAffine();
     buildInCurve();
+    buildAffine();
 
     buildBatchToAffine();
 
@@ -1532,6 +1569,8 @@ module.exports = function buildCurve(module, prefix, prefixField, pB) {
 
     module.exportFunction(prefix + "_inCurve");
     module.exportFunction(prefix + "_inCurveAffine");
+
+    module.exportFunction(prefix + "_affine");
 
     /*
     buildG1MulScalar(module, zq);
