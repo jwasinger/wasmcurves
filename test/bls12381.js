@@ -797,5 +797,18 @@ describe("Basic tests for g1 in bls12-381", function () {
         assert.equal(pb.g2m_inGroup(p1), 1);
     });
 
+    it("jwasinger - pairingEq2 test for evm384", async () => {
+        const pG1 = pb.bls12381.pG1gen;
+        const pG2 = pb.bls12381.pG2gen;
+        const pnG1 = pb.alloc(n8q*3);
+        const pnG2 = pb.bls12381.pG2gen;
+        const pOne = pb.alloc(n8q * 12);
 
+        pb.ftm_one(pOne)
+        pb.g1m_neg(pG1, pnG1)
+
+        // pnG1 <- negate(pG1)
+        // assert e(pG1, pG2) * e(pnG1, pnG2) == 1
+        assert(pb.bls12381_pairingEq2(pG1, pG2, pnG1, pnG2, pOne))
+    })
 });
