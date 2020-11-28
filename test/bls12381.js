@@ -805,9 +805,10 @@ describe("Basic tests for g1 in bls12-381", function () {
         const pOne = pb.alloc(n8q * 12);
 
         pb.ftm_one(pOne)
-        pb.g1m_neg(pG1, pnG1)
 
         // pnG1 <- negate(pG1)
+        pb.g1m_neg(pG1, pnG1)
+
         // assert e(pG1, pG2) * e(pnG1, pnG2) == 1
         assert(pb.bls12381_pairingEq2(pG1, pG2, pnG1, pnG2, pOne))
     })
