@@ -797,19 +797,67 @@ describe("Basic tests for g1 in bls12-381", function () {
         assert.equal(pb.g2m_inGroup(p1), 1);
     });
 
+    function toMontgomery(a) {
+        return bigInt(a).times( bigInt.one.shiftLeft(48*8)).mod(q);
+    }
+
+    const G1gen = [
+        bigInt("3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507"),
+        bigInt("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569"),
+        bigInt.one
+    ];
+
+    function pairingEq2(pG1_1, pG2_1, pG1_2, pG2_2, pF12_check) {
+        const num_pairings = 2
+
+        const ftsize = 48 * 12;
+        const prePSize = 288
+        const preQSize = 20448
+
+        const resT = pb.alloc(ftsize)
+        const auxT = pb.alloc(ftsize)
+        const pPreP = pb.alloc(prePSize);
+        const pPreQ = pb.alloc(preQSize);
+
+        pb.ftm_one(resT)
+
+        // note: subgroup checks ommitted.
+        pb.bls12381_prepareG1(pG1_1, pPreP)
+        pb.bls12381_prepareG2(pG2_1, pPreQ)
+        pb.bls12381_millerLoop(pPreP, pPreQ, auxT)
+
+        pb.ftm_mul(resT, auxT, resT)
+
+        pb.bls12381_prepareG1(pG1_2, pPreP)
+        pb.bls12381_prepareG2(pG2_2, pPreQ)
+        pb.bls12381_millerLoop(pPreP, pPreQ, auxT)
+
+        pb.ftm_mul(resT, auxT, resT)
+
+        pb.bls12381_finalExponentiation(resT, resT)
+        return pb.ftm_eq(resT, pF12_check)
+    }
+
     it("jwasinger - pairingEq2 test for evm384", async () => {
+        console.log(G1gen)
+        console.log(toMontgomery)
+
         const pG1 = pb.bls12381.pG1gen;
         const pG2 = pb.bls12381.pG2gen;
         const pnG1 = pb.alloc(n8q*3);
         const pnG2 = pb.bls12381.pG2gen;
         const pOne = pb.alloc(n8q * 12);
 
+        pb.g1m_add(pG1, pG1, pG1)
+
         pb.ftm_one(pOne)
+        console.log(pb.get(pG1))
 
         // pnG1 <- negate(pG1)
         pb.g1m_neg(pG1, pnG1)
 
         // assert e(pG1, pG2) * e(pnG1, pnG2) == 1
-        assert(pb.bls12381_pairingEq2(pG1, pG2, pnG1, pnG2, pOne))
+        //assert(pb.bls12381_pairingEq2(pG1, pG2, pnG1, pnG2, pOne))
+        assert(pairingEq2(pG1, pG2, pnG1, pnG2, pOne))
     })
 });
