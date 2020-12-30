@@ -903,17 +903,33 @@ describe("Basic tests for g1 in bls12-381", function () {
         assert(!pairingEq2(pnG1, pnG2, pnG1, pnG2, pOne))
     })
 
-/*
     it("jwasinger - pairingEq2", async () => {
         const pG1 = pb.bls12381.pG1gen;
         const pG2 = pb.bls12381.pG2gen;
-        const pnG1 = pb.alloc(n8q*3);
-        const pnG2 = pb.alloc(n8q*6);
-        const pOne = pb.alloc(n8q * 12);
+        const pnG1 = pb.alloc(SIZE_E1);
+        const pnG2 = pb.alloc(SIZE_E2);
+        const pOne = pb.alloc(SIZE_F12);
+
+        pb.ftm_one(pOne)
+
+        // pnG1 <- negate(pG1)
+        pb.g1m_double(pG1, pnG1)
+        pb.g1m_neg(pG1, pnG1)
+
+        pb.g2m_double(pG2, pnG2)
+        pb.g2m_neg(pG2, pnG2)
+
+        // simple tests for e(...)**(x)(-x) == 1
+        assert(pairingEq2(pnG1, pG2, pG1, pG2, pOne))
+        assert(pairingEq2(pG1, pnG2, pG1, pG2, pOne))
+        assert(pairingEq2(pG1, pG2, pnG1, pG2, pOne))
+        assert(pairingEq2(pG1, pG2, pG1, pnG2, pOne))
+        assert(pairingEq2(pnG1, pnG2, pG1, pnG2, pOne))
+
+        assert(!pairingEq2(pnG1, pnG2, pnG1, pnG2, pOne))
     })
 
     it("jwasinger - pairing non-degeneracy", async () => {
-        // e(x * a, y) == e(x, y * a) == e(x, y) * a
+        // e(P,Q) != 1
     })
-*/
 });
