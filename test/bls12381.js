@@ -10,6 +10,34 @@ describe("Basic tests for g1 in bls12-381", function () {
     const n8q=48;
     const n8r=32;
 
+    function getFieldElementMontF12(pR) {
+        const res =  [
+            [
+                [
+                    pb.get(pR).value.toString(16),
+                    pb.get(pR+n8q).value.toString(16),
+                ],[
+                    pb.get(pR+n8q*2),
+                    pb.get(pR+n8q*3),
+                ],[
+                    pb.get(pR+n8q*4),
+                    pb.get(pR+n8q*5),
+                ]
+            ],[
+                [
+                    pb.get(pR+n8q*6),
+                    pb.get(pR+n8q*7),
+                ],[
+                    pb.get(pR+n8q*8),
+                    pb.get(pR+n8q*9),
+                ],[
+                    pb.get(pR+n8q*10),
+                    pb.get(pR+n8q*11),
+                ]
+            ]
+        ];
+        return res;
+    }
     function getFieldElementF12(pR) {
         pb.ftm_fromMontgomery(pR, pR);
         const res =  [
@@ -826,6 +854,9 @@ describe("Basic tests for g1 in bls12-381", function () {
         pb.bls12381_prepareG2(pG2_1, pPreQ)
         pb.bls12381_millerLoop(pPreP, pPreQ, auxT)
 
+        console.log('after first miller loop')
+        console.log(getFieldElementMontF12(auxT))
+
         pb.ftm_mul(resT, auxT, resT)
 
         pb.bls12381_prepareG1(pG1_2, pPreP)
@@ -834,30 +865,55 @@ describe("Basic tests for g1 in bls12-381", function () {
 
         pb.ftm_mul(resT, auxT, resT)
 
+        console.log('after second miller loop')
+        console.log(getFieldElementMontF12(auxT))
+
         pb.bls12381_finalExponentiation(resT, resT)
+
+        console.log('after final exp')
+        console.log(getFieldElementMontF12(resT))
         return pb.ftm_eq(resT, pF12_check)
     }
 
-    it("jwasinger - pairingEq2 test for evm384", async () => {
-        console.log(G1gen)
-        console.log(toMontgomery)
+    // jacobian
+    const SIZE_E1 = n8q * 3
+    const SIZE_E2 = SIZE_E1 * 2 
+    const SIZE_F12 = n8q * 12
 
+    it("jwasinger - pairingEq2 naive", async () => {
         const pG1 = pb.bls12381.pG1gen;
         const pG2 = pb.bls12381.pG2gen;
-        const pnG1 = pb.alloc(n8q*3);
-        const pnG2 = pb.bls12381.pG2gen;
-        const pOne = pb.alloc(n8q * 12);
-
-        pb.g1m_add(pG1, pG1, pG1)
+        const pnG1 = pb.alloc(SIZE_E1);
+        const pnG2 = pb.alloc(SIZE_E2);
+        const pOne = pb.alloc(SIZE_F12);
 
         pb.ftm_one(pOne)
-        console.log(pb.get(pG1))
 
         // pnG1 <- negate(pG1)
         pb.g1m_neg(pG1, pnG1)
+        pb.g2m_neg(pG2, pnG2)
 
-        // assert e(pG1, pG2) * e(pnG1, pnG2) == 1
-        //assert(pb.bls12381_pairingEq2(pG1, pG2, pnG1, pnG2, pOne))
-        assert(pairingEq2(pG1, pG2, pnG1, pnG2, pOne))
+        // simple tests for e(...)**(x)(-x) == 1
+        assert(pairingEq2(pnG1, pG2, pG1, pG2, pOne))
+        assert(pairingEq2(pG1, pnG2, pG1, pG2, pOne))
+        assert(pairingEq2(pG1, pG2, pnG1, pG2, pOne))
+        assert(pairingEq2(pG1, pG2, pG1, pnG2, pOne))
+        assert(pairingEq2(pnG1, pnG2, pG1, pnG2, pOne))
+
+        assert(!pairingEq2(pnG1, pnG2, pnG1, pnG2, pOne))
     })
+
+/*
+    it("jwasinger - pairingEq2", async () => {
+        const pG1 = pb.bls12381.pG1gen;
+        const pG2 = pb.bls12381.pG2gen;
+        const pnG1 = pb.alloc(n8q*3);
+        const pnG2 = pb.alloc(n8q*6);
+        const pOne = pb.alloc(n8q * 12);
+    })
+
+    it("jwasinger - pairing non-degeneracy", async () => {
+        // e(x * a, y) == e(x, y * a) == e(x, y) * a
+    })
+*/
 });
