@@ -86,12 +86,12 @@ describe("Basic tests for g1 in bls12-381", function () {
         return res;
     }
     function getFieldElementF2(pR) {
-        pb.f2m_fromMontgomery(pR, pR);
+        //pb.f2m_fromMontgomery(pR, pR);
         const res =  [
             pb.get(pR),
             pb.get(pR+n8q),
         ];
-        pb.f2m_toMontgomery(pR, pR);
+        //pb.f2m_toMontgomery(pR, pR);
         return res;
     }
 
@@ -120,9 +120,9 @@ describe("Basic tests for g1 in bls12-381", function () {
     }
 
     function ns(p) {
-        pb.f1m_fromMontgomery(p, p);
+        // pb.f1m_fromMontgomery(p, p);
         const n = pb.get(p);
-        pb.f1m_toMontgomery(p, p);
+        // pb.f1m_toMontgomery(p, p);
         return "0x" + n.toString(16);
     }
 
@@ -151,6 +151,8 @@ describe("Basic tests for g1 in bls12-381", function () {
 
     function printG1(s, p) {
         console.log(s + " G1(" + ns(p) + " , " + ns(p+n8q) + " , " + ns(p+n8q*2) + ")"   );
+        console.log(pb.get(p))
+        debugger
     }
 
     function printG2(s, p) {
@@ -875,6 +877,14 @@ describe("Basic tests for g1 in bls12-381", function () {
         return pb.ftm_eq(resT, pF12_check)
     }
 
+    function formatPairingEq2Input(pG1_1, pG2_1, pG1_2, pG2_2) {
+        // encoding is G1_1 (SIZE_E1) + G2_1 (SIZE_E2) + G1_2 (SIZE_E1) + G2_2 (SIZE_E2)
+        printG1(pG1_1)
+        printG2(pG2_1)
+
+        debugger
+    }
+
     // jacobian
     const SIZE_E1 = n8q * 3
     const SIZE_E2 = SIZE_E1 * 2 
@@ -906,27 +916,23 @@ describe("Basic tests for g1 in bls12-381", function () {
     it("jwasinger - pairingEq2", async () => {
         const pG1 = pb.bls12381.pG1gen;
         const pG2 = pb.bls12381.pG2gen;
-        const pnG1 = pb.alloc(SIZE_E1);
-        const pnG2 = pb.alloc(SIZE_E2);
+        const pnG2_1 = pb.alloc(SIZE_E2);
+        const pnG2_2 = pb.alloc(SIZE_E2);
         const pOne = pb.alloc(SIZE_F12);
 
         pb.ftm_one(pOne)
 
-        // pnG1 <- negate(pG1)
-        pb.g1m_double(pG1, pnG1)
-        pb.g1m_neg(pG1, pnG1)
+        //formatPairingEq2Input(pnG1, pnG2, pG1, pnG2, pOne)
+        //formatPairingEq2Input(pG1, pG2, pG1, pG2, pOne)
 
-        pb.g2m_double(pG2, pnG2)
-        pb.g2m_neg(pG2, pnG2)
+        // pnG1 <- negate(pG1)
+        pb.g2m_double(pG2, pnG2_1)
+
+        pb.g2m_double(pG2, pnG2_2)
+        pb.g2m_neg(pnG2_2, pnG2_2)
 
         // simple tests for e(...)**(x)(-x) == 1
-        assert(pairingEq2(pnG1, pG2, pG1, pG2, pOne))
-        assert(pairingEq2(pG1, pnG2, pG1, pG2, pOne))
-        assert(pairingEq2(pG1, pG2, pnG1, pG2, pOne))
-        assert(pairingEq2(pG1, pG2, pG1, pnG2, pOne))
-        assert(pairingEq2(pnG1, pnG2, pG1, pnG2, pOne))
-
-        assert(!pairingEq2(pnG1, pnG2, pnG1, pnG2, pOne))
+        assert(pairingEq2(pG1, pnG2_1, pG1, pnG2_2, pOne))
     })
 
     it("jwasinger - pairing non-degeneracy", async () => {
